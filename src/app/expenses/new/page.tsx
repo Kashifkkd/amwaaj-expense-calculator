@@ -1,6 +1,8 @@
 "use client"
 
 import DatePicker from "@/app/components/date_picker";
+import { DENOMINATIONS } from "@/app/constants/expense";
+import { expenseSchema } from "@/app/schemas/expense";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,17 +10,6 @@ import { Switch } from "@/components/ui/switch";
 import React, { useState } from "react";
 import { z } from "zod";
 
-const denominations = [1, 2, 5, 10, 20, 50, 100, 200, 500, 2000] as const;
-
-export const expenseSchema = z.object({
-  date: z.date(),
-  cashAmount: z.number().nonnegative(),
-  onlineAmount: z.number().nonnegative(),
-  noteCount: z.record(
-    z.enum(denominations.map(String) as [`${typeof denominations[number]}`, ...string[]]),
-    z.number().nonnegative()
-  )
-});
 
 type ExpenseForm = z.infer<typeof expenseSchema>;
 
@@ -27,7 +18,7 @@ export default function ExpenseCalculator() {
     date: new Date(),
     cashAmount: 0,
     onlineAmount: 0,
-    noteCount: Object.fromEntries(denominations.map((d) => [d, 0]))
+    noteCount: Object.fromEntries(DENOMINATIONS.map((d) => [d, 0]))
   });
   const [useNoteCount, setUseNoteCount] = useState(false);
 
@@ -49,8 +40,8 @@ export default function ExpenseCalculator() {
         [denomination]: newNoteCount
       };
 
-      const newCashAmount = denominations.reduce(
-        (sum, d) => sum + updatedNoteCount[d] * d,
+      const newCashAmount = Object.entries(updatedNoteCount).reduce(
+        (sum, [key, count]) => sum + (count as number * Number(key)),
         0
       );
 
@@ -69,13 +60,6 @@ export default function ExpenseCalculator() {
     }));
   };
 
-  const calculateCashAmount = () => {
-    const total = denominations.reduce(
-      (sum, d) => sum + form.noteCount[d] * d,
-      0
-    );
-    setForm((prev) => ({ ...prev, cashAmount: total }));
-  };
 
   return (
     <div className="max-w-xl mx-auto p-6 bg-white rounded shadow space-y-4">
@@ -89,7 +73,7 @@ export default function ExpenseCalculator() {
         {useNoteCount ? (
           <div className="space-y-2">
             <Label>Note Count</Label>
-            {denominations.map((d) => (
+            {DENOMINATIONS.map((d) => (
               <div key={d} className="flex items-center gap-2">
                 <Label className="w-[30%]">{d} INR</Label>
                 <Label className="w-[10%]">X</Label>
